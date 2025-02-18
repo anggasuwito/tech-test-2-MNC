@@ -3,7 +3,7 @@ package model
 import (
 	"github.com/google/uuid"
 	"tech-test-2-MNC/internal/domain/entity"
-	"tech-test-2-MNC/internal/utils"
+	"time"
 )
 
 func (m *UserAccount) TableName() string {
@@ -31,6 +31,22 @@ func (m *UserAccount) RegisterUserAccount(req *entity.AuthRegisterRequest, hashe
 	m.PIN = hashedPIN
 }
 
+func (m *UserAccount) UpdateUserAccount(req *entity.UpdateProfileRequest) {
+	m.FirstName = req.FirstName
+	m.LastName = req.LastName
+	m.Address = req.Address
+}
+
+func (m *UserAccount) ToJWTAccInfo() *entity.JWTClaimAccountInfo {
+	return &entity.JWTClaimAccountInfo{
+		ID:        m.ID,
+		Phone:     m.PhoneNumber,
+		FirstName: m.FirstName,
+		LastName:  m.LastName,
+		Address:   m.Address,
+	}
+}
+
 func (m *UserAccount) ToEntity() *entity.UserAccount {
 	return &entity.UserAccount{
 		ID:          m.ID,
@@ -38,7 +54,7 @@ func (m *UserAccount) ToEntity() *entity.UserAccount {
 		LastName:    m.LastName,
 		PhoneNumber: m.PhoneNumber,
 		Address:     m.Address,
-		CreatedAt:   utils.ParseTime(m.CreatedAt.Time),
-		UpdatedAt:   utils.ParseTime(m.UpdatedAt.Time),
+		CreatedAt:   m.CreatedAt.Time.Format(time.RFC3339),
+		UpdatedAt:   m.UpdatedAt.Time.Format(time.RFC3339),
 	}
 }

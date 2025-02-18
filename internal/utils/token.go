@@ -8,13 +8,12 @@ import (
 	"tech-test-2-MNC/config"
 	"tech-test-2-MNC/internal/constant"
 	"tech-test-2-MNC/internal/domain/entity"
-	"tech-test-2-MNC/internal/domain/model"
 	"time"
 )
 
 const claimsDataKey = "claims_data"
 
-func GenerateJWT(acc *model.UserAccount, tokenType string) (tokenStr string, data entity.JWTClaim, err error) {
+func GenerateJWT(acc *entity.JWTClaimAccountInfo, tokenType string) (tokenStr string, data entity.JWTClaim, err error) {
 	var (
 		tokenB          = jwt.New(jwt.SigningMethodHS256)
 		claims          = tokenB.Claims.(jwt.MapClaims)
@@ -37,15 +36,9 @@ func GenerateJWT(acc *model.UserAccount, tokenType string) (tokenStr string, dat
 	// Set payload
 	expiredAt := TimeNow().Add(tokenExpiredDuration).Unix()
 	data = entity.JWTClaim{
-		ID:        uuid.New().String(),
-		ExpiredAt: expiredAt,
-		AccountInfo: &entity.JWTClaimAccountInfo{
-			ID:        acc.ID,
-			Phone:     acc.PhoneNumber,
-			FirstName: acc.FirstName,
-			LastName:  acc.LastName,
-			Address:   acc.Address,
-		},
+		ID:          uuid.New().String(),
+		ExpiredAt:   expiredAt,
+		AccountInfo: acc,
 	}
 
 	claims["expired_at"] = expiredAt

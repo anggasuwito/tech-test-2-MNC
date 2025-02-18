@@ -14,8 +14,8 @@ type (
 	}
 
 	AuthLoginRequest struct {
-		Phone string `json:"phone"`
-		PIN   string `json:"pin"`
+		PhoneNumber string `json:"phone_number"`
+		PIN         string `json:"pin"`
 	}
 
 	AuthLoginResponse struct {

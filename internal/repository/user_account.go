@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"tech-test-2-MNC/internal/domain/model"
 	"tech-test-2-MNC/internal/utils"
 )
@@ -11,8 +12,10 @@ import (
 type UserAccountRepo interface {
 	CheckExistPhone(ctx context.Context, phone string) (bool, error)
 	GetUserAccountByPhone(ctx context.Context, phone string) (*model.UserAccount, error)
+	GetUserAccountByID(ctx context.Context, id string) (*model.UserAccount, error)
 	CreateUserAccount(ctx context.Context, req *model.UserAccount) error
 	CreateUserAccountBalance(ctx context.Context, req *model.UserAccountBalance) error
+	UpdateUserAccount(ctx context.Context, req *model.UserAccount) error
 }
 
 type userAccountRepo struct {
@@ -52,6 +55,26 @@ func (r *userAccountRepo) GetUserAccountByPhone(ctx context.Context, phone strin
 	return &data, nil
 }
 
+func (r *userAccountRepo) GetUserAccountByID(ctx context.Context, id string) (*model.UserAccount, error) {
+	var data model.UserAccount
+
+	err := r.masterDB.
+		Debug().
+		Model(&model.UserAccount{}).
+		Where("deleted_at IS NULL").
+		Where("id = ?", id).
+		First(&data).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, utils.ErrNotFound("User Account Not Found", "userAccountRepo.GetUserAccountByID.ErrRecordNotFound")
+		}
+		return nil, utils.ErrInternal("Failed get user account : "+err.Error(), "userAccountRepo.GetUserAccountByID")
+	}
+
+	return &data, nil
+}
+
 func (r *userAccountRepo) CheckExistPhone(ctx context.Context, phone string) (bool, error) {
 	var count int64
 
@@ -84,6 +107,19 @@ func (r *userAccountRepo) CreateUserAccountBalance(ctx context.Context, req *mod
 	err := db.Debug().Create(req).Error
 	if err != nil {
 		return utils.ErrInternal("Failed create new user account : "+err.Error(), "userAccountRepo.CreateUserAccountBalance")
+	}
+	return nil
+}
+
+func (r *userAccountRepo) UpdateUserAccount(ctx context.Context, req *model.UserAccount) error {
+	db := r.useTX(ctx)
+	err := db.Debug().Model(req).
+		Clauses(clause.Returning{}).
+		Where("id = ?", req.ID).
+		Updates(req).
+		Error
+	if err != nil {
+		return utils.ErrInternal("Failed update user account : "+err.Error(), "userAccountRepo.UpdateUserAccount")
 	}
 	return nil
 }

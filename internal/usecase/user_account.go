@@ -23,5 +23,18 @@ func NewUserAccUC(
 }
 
 func (u *userAccUC) UpdateProfile(ctx context.Context, req *entity.UpdateProfileRequest) (*entity.UpdateProfileResponse, error) {
-	return nil, nil
+	account, err := u.userAccRepo.GetUserAccountByID(ctx, req.AccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	account.UpdateUserAccount(req)
+	err = u.userAccRepo.UpdateUserAccount(ctx, account)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.UpdateProfileResponse{
+		account.ToEntity(),
+	}, nil
 }

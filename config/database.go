@@ -43,7 +43,9 @@ func getDatabase(config dbConfig) (*gorm.DB, error) {
 func autoMigrate(db *gorm.DB) error {
 	err := []error{
 		db.AutoMigrate(&model.UserAccount{}),
+		db.AutoMigrate(&model.UserAccountBalance{}),
 		db.AutoMigrate(&model.Transaction{}),
+		db.AutoMigrate(&model.TransactionDetail{}),
 	}
 	for _, e := range err {
 		if e != nil {

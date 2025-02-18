@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/gin-gonic/gin"
 	"strings"
+	"tech-test-2-MNC/internal/constant"
 	"tech-test-2-MNC/internal/domain/entity"
 	"tech-test-2-MNC/internal/utils"
 )
@@ -19,7 +20,7 @@ func TokenChecker(c *gin.Context) {
 		return
 	}
 	tokenStr := token[1]
-	tokenClaims, err := utils.VerifyJWT(tokenStr)
+	tokenClaims, err := utils.VerifyJWT(tokenStr, constant.TokenTypeAccess)
 	if err != nil {
 		utils.ResponseError(c, utils.ErrUnauthorized("Invalid Token", "middleware.TokenChecker.VerifyJWT"))
 		return

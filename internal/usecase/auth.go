@@ -77,7 +77,7 @@ func (u *authUC) Register(ctx context.Context, req *entity.AuthRegisterRequest) 
 }
 
 func (u *authUC) Login(ctx context.Context, req *entity.AuthLoginRequest) (*entity.AuthLoginResponse, error) {
-	account, err := u.accountRepo.GetUserAccountByPhone(ctx, req.Phone)
+	account, err := u.accountRepo.GetUserAccountByPhone(ctx, req.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -87,12 +87,12 @@ func (u *authUC) Login(ctx context.Context, req *entity.AuthLoginRequest) (*enti
 		return nil, utils.ErrBadRequest("Invalid pin", "authUC.Login.CompareHashCredential")
 	}
 
-	accessToken, _, err := utils.GenerateJWT(account, constant.TokenTypeAccess)
+	accessToken, _, err := utils.GenerateJWT(account.ToJWTAccInfo(), constant.TokenTypeAccess)
 	if err != nil {
 		return nil, utils.ErrInternal("Failed generate jwt : "+err.Error(), "authUC.Login.GenerateJWT")
 	}
 
-	refreshToken, _, err := utils.GenerateJWT(account, constant.TokenTypeRefresh)
+	refreshToken, _, err := utils.GenerateJWT(account.ToJWTAccInfo(), constant.TokenTypeRefresh)
 	if err != nil {
 		return nil, utils.ErrInternal("Failed generate jwt : "+err.Error(), "authUC.Login.GenerateJWT")
 	}
