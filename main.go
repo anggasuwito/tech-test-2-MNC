@@ -1,5 +1,20 @@
 package main
 
-func main() {
+import (
+	"sync"
+	"tech-test-2-MNC/api"
+	"tech-test-2-MNC/config"
+)
 
+func main() {
+	//Init Config
+	config.SetConfig()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	//Start HTTP / REST Server
+	go api.StartHttpServer()
+
+	wg.Wait()
 }
