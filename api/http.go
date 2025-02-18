@@ -33,7 +33,7 @@ func setupRouters(r *gin.Engine) {
 	transactionRepo := repository.NewTransactionRepo(cfg.DBMaster)
 	txWrapper := repository.NewTransactionWrapper(cfg.DBMaster)
 
-	authUC := usecase.NewAuthUC(userAccountRepo)
+	authUC := usecase.NewAuthUC(txWrapper, userAccountRepo)
 	userAccountUC := usecase.NewUserAccUC(userAccountRepo)
 	transactionUC := usecase.NewTransactionUC(txWrapper, userAccountRepo, transactionRepo)
 

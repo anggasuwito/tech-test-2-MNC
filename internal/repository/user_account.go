@@ -2,17 +2,17 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"gorm.io/gorm"
-	"tech-test-2-MNC/internal/constant"
 	"tech-test-2-MNC/internal/domain/model"
 	"tech-test-2-MNC/internal/utils"
 )
 
 type UserAccountRepo interface {
+	CheckExistPhone(ctx context.Context, phone string) (bool, error)
 	GetUserAccountByPhone(ctx context.Context, phone string) (*model.UserAccount, error)
-	GetUserAccountByID(ctx context.Context, id string) (*model.UserAccount, error)
-	GetUserAccountByVA(ctx context.Context, vaNumber string) (*model.UserAccount, error)
-	UpdateUserBalance(ctx context.Context, id string, amount int64, updateType string) error
+	CreateUserAccount(ctx context.Context, req *model.UserAccount) error
+	CreateUserAccountBalance(ctx context.Context, req *model.UserAccountBalance) error
 }
 
 type userAccountRepo struct {
@@ -39,11 +39,11 @@ func (r *userAccountRepo) GetUserAccountByPhone(ctx context.Context, phone strin
 		Debug().
 		Model(&model.UserAccount{}).
 		Where("deleted_at IS NULL").
-		Where("phone = ?", phone).
+		Where("phone_number = ?", phone).
 		First(&data).
 		Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, utils.ErrNotFound("User Account Not Found", "userAccountRepo.GetUserAccountByPhone.ErrRecordNotFound")
 		}
 		return nil, utils.ErrInternal("Failed get user account : "+err.Error(), "userAccountRepo.GetUserAccountByPhone")
@@ -52,66 +52,38 @@ func (r *userAccountRepo) GetUserAccountByPhone(ctx context.Context, phone strin
 	return &data, nil
 }
 
-func (r *userAccountRepo) GetUserAccountByID(ctx context.Context, id string) (*model.UserAccount, error) {
-	var data model.UserAccount
+func (r *userAccountRepo) CheckExistPhone(ctx context.Context, phone string) (bool, error) {
+	var count int64
 
 	err := r.masterDB.
 		Debug().
 		Model(&model.UserAccount{}).
 		Where("deleted_at IS NULL").
-		Where("id = ?", id).
-		First(&data).
+		Where("phone_number = ?", phone).
+		Count(&count).
 		Error
+
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, utils.ErrNotFound("User Account Not Found", "userAccountRepo.GetUserAccountByID.ErrRecordNotFound")
-		}
-		return nil, utils.ErrInternal("Failed get user account : "+err.Error(), "userAccountRepo.GetUserAccountByID")
+		return false, utils.ErrInternal("Failed check exist phone : "+err.Error(), "userAccountRepo.CheckExistPhone")
 	}
 
-	return &data, nil
+	return count > 0, nil
 }
 
-func (r *userAccountRepo) GetUserAccountByVA(ctx context.Context, vaNumber string) (*model.UserAccount, error) {
-	var data model.UserAccount
-
-	err := r.masterDB.
-		Debug().
-		Model(&model.UserAccount{}).
-		Where("deleted_at IS NULL").
-		Where("va_number = ?", vaNumber).
-		First(&data).
-		Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, utils.ErrNotFound("User Account Not Found", "userAccountRepo.GetUserAccountByVA.ErrRecordNotFound")
-		}
-		return nil, utils.ErrInternal("Failed get user account : "+err.Error(), "userAccountRepo.GetUserAccountByVA")
-	}
-
-	return &data, nil
-}
-
-func (r *userAccountRepo) UpdateUserBalance(ctx context.Context, id string, amount int64, updateType string) error {
+func (r *userAccountRepo) CreateUserAccount(ctx context.Context, req *model.UserAccount) error {
 	db := r.useTX(ctx)
-	q := db.
-		Debug().
-		Model(&model.UserAccount{}).
-		Where("id", id)
-
-	switch updateType {
-	case constant.INCREASE:
-		q.Update("balance", gorm.Expr("balance + ?", amount))
-	case constant.DECREASE:
-		q.Update("balance", gorm.Expr("balance - ?", amount))
-	default:
-		return utils.ErrBadRequest("Invalid update balance type", "userAccountRepo.UpdateUserBalance.Type")
-	}
-
-	err := q.Error
+	err := db.Debug().Create(req).Error
 	if err != nil {
-		return utils.ErrInternal("Failed update balance : "+err.Error(), "userAccountRepo.UpdateUserBalance.Update")
+		return utils.ErrInternal("Failed create new user account : "+err.Error(), "userAccountRepo.CreateUserAccount")
 	}
+	return nil
+}
 
+func (r *userAccountRepo) CreateUserAccountBalance(ctx context.Context, req *model.UserAccountBalance) error {
+	db := r.useTX(ctx)
+	err := db.Debug().Create(req).Error
+	if err != nil {
+		return utils.ErrInternal("Failed create new user account : "+err.Error(), "userAccountRepo.CreateUserAccountBalance")
+	}
 	return nil
 }
