@@ -35,7 +35,7 @@ func setupRouters(r *gin.Engine) {
 
 	authUC := usecase.NewAuthUC(txWrapper, userAccountRepo)
 	userAccountUC := usecase.NewUserAccUC(userAccountRepo)
-	transactionUC := usecase.NewTransactionUC(txWrapper, userAccountRepo, transactionRepo)
+	transactionUC := usecase.NewTransactionUC(cfg.NSQProducer, txWrapper, userAccountRepo, transactionRepo)
 
 	handler.NewAuthHandler(authUC).SetupHandlers(r)
 	handler.NewUserAccHandler(userAccountUC).SetupHandlers(r)

@@ -30,6 +30,7 @@ type Configuration struct {
 	NSQRequeueTime             int
 	NSQMaxAttempts             uint16
 	NSQConsumers               []NSQConsumer
+	NSQProducer                *NSQProducer
 }
 
 type NSQConsumer struct {
@@ -62,6 +63,11 @@ func SetConfig() {
 		address:  os.Getenv("REDIS_ADDR"),
 		password: os.Getenv("REDIS_PASSWORD"),
 	})
+
+	val.NSQProducer, err = newNSQProducer(os.Getenv("NSQ_PRODUCER_HOST"))
+	if err != nil {
+		log.Fatal("[config] failed connecting nsq producer : " + err.Error())
+	}
 
 	val.DBMaster = dbMaster
 	val.RedisClient = redisClient

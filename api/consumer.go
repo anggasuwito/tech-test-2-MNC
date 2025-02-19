@@ -26,7 +26,7 @@ func NewConsumer() *NSQ {
 	accountRepo := repository.NewUserAccountRepo(cfg.DBMaster)
 	transactionRepo := repository.NewTransactionRepo(cfg.DBMaster)
 
-	tuc := usecase.NewTransactionUC(txWrapper, accountRepo, transactionRepo)
+	tuc := usecase.NewTransactionUC(cfg.NSQProducer, txWrapper, accountRepo, transactionRepo)
 	shHandler := consumer.NewTransactionHandler(nsqClient, tuc)
 
 	return &NSQ{

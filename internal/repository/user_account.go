@@ -62,6 +62,7 @@ func (r *userAccountRepo) GetUserAccountByID(ctx context.Context, id string) (*m
 
 	err := r.masterDB.
 		Debug().
+		Preload("AccountBalance").
 		Model(&model.UserAccount{}).
 		Where("deleted_at IS NULL").
 		Where("id = ?", id).
