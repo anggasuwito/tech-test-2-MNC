@@ -37,7 +37,7 @@ CHANNEL_UPDATE_TRANSACTION_STATUS=update_transaction_status
 
 ## Example database diagram
 
-![img.png](img.png)
+![img_11.png](img_11.png)
 
 ## Example request & response
 
@@ -58,3 +58,21 @@ CHANNEL_UPDATE_TRANSACTION_STATUS=update_transaction_status
 
 - API Update Profile (Failed)
 ![img_4.png](img_4.png)
+
+- API Topup (Failed)
+![img_6.png](img_6.png)
+
+- API Topup (Success)
+![img_7.png](img_7.png)
+
+- API Transfer (Success)
+
+- API Payment (Success)
+![img_9.png](img_9.png)
+
+- API Payment (Failed)
+![img_8.png](img_8.png)
+
+- API Transaction Report (Success)
+![img_10.png](img_10.png)
+

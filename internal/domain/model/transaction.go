@@ -15,7 +15,7 @@ func (m *Transaction) TableName() string {
 type Transaction struct {
 	BaseModel
 
-	TransactionDetails []*TransactionDetail `gorm:"foreignKey:ID"`
+	TransactionDetails []*TransactionDetail `gorm:"foreignKey:TransactionID"`
 	Category           string               `gorm:"column:category;size:100;"`
 	Status             string               `gorm:"column:status;size:100;"`
 	Description        string               `gorm:"column:description;size:255;"`

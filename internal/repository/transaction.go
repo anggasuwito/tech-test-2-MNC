@@ -3,14 +3,18 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"strings"
+	"tech-test-2-MNC/internal/domain/entity"
 	"tech-test-2-MNC/internal/domain/model"
 	"tech-test-2-MNC/internal/utils"
 )
 
 type TransactionRepo interface {
 	GetTransactionByID(ctx context.Context, id string) (*model.Transaction, error)
+	GetTransactionDetails(ctx context.Context, filter []*entity.Filter, sort []*entity.Filter, page, limit int64) ([]*model.TransactionDetail, int64, error)
 	CreateTransactionDetail(ctx context.Context, data *model.TransactionDetail) error
 	CreateTransaction(ctx context.Context, data *model.Transaction) error
 	UpdateTransaction(ctx context.Context, req *model.Transaction) error
@@ -85,4 +89,43 @@ func (r *transactionRepo) UpdateTransaction(ctx context.Context, req *model.Tran
 		return utils.ErrInternal("Failed update transaction : "+err.Error(), "userAccountRepo.UpdateTransaction")
 	}
 	return nil
+}
+
+func (r *transactionRepo) GetTransactionDetails(ctx context.Context, filter []*entity.Filter, sort []*entity.Filter, page, limit int64) ([]*model.TransactionDetail, int64, error) {
+	var (
+		res   = []*model.TransactionDetail{}
+		count int64
+		err   error
+	)
+
+	q := r.masterDB.Debug().Preload("Transaction").Model(&model.TransactionDetail{}).Where("deleted_at is NULL")
+	for _, v := range filter {
+		if v.Value == "" {
+			continue
+		}
+
+		valSlice := strings.Split(v.Value, "|")
+
+		switch v.Field {
+		case "account_id":
+			if len(valSlice) > 1 {
+				q.Where(fmt.Sprintf("%s IN(?)", v.Field), valSlice)
+			} else {
+				q.Where(fmt.Sprintf("%s = ?", v.Field), v.Value)
+			}
+		}
+	}
+
+	for _, s := range sort {
+		q.Order(fmt.Sprintf("%s %s", s.Field, s.Value))
+	}
+
+	if len(sort) < 1 {
+		q.Order("created_at DESC")
+	}
+
+	q.Count(&count)
+
+	err = q.Limit(int(limit)).Offset(int((page - 1) * limit)).Find(&res).Error
+	return res, count, err
 }

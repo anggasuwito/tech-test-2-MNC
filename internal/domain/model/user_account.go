@@ -13,7 +13,7 @@ func (m *UserAccount) TableName() string {
 type UserAccount struct {
 	BaseModel
 
-	AccountBalance *UserAccountBalance `gorm:"foreignKey:ID"`
+	AccountBalance *UserAccountBalance `gorm:"foreignKey:AccountID"`
 	PhoneNumber    string              `gorm:"column:phone_number;size:100;"`
 	FirstName      string              `gorm:"column:first_name;size:255;"`
 	LastName       string              `gorm:"column:last_name;size:255;"`

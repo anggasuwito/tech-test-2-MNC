@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"database/sql"
+	"math"
 	"tech-test-2-MNC/config"
 	"tech-test-2-MNC/internal/constant"
 	"tech-test-2-MNC/internal/domain/entity"
@@ -106,6 +107,10 @@ func (u *transactionUC) Transfer(ctx context.Context, req *entity.TransactionTra
 		return nil, utils.ErrBadRequest("Balance is not enough", "transactionUC.Transfer.Balance")
 	}
 
+	if req.AccountID == req.TargetAccountID {
+		return nil, utils.ErrBadRequest("Invalid transfer target", "transactionUC.Transfer.TargetAccountID")
+	}
+
 	if err = u.txWrapper.ExecuteTransaction(ctx,
 		func(ctxTX context.Context) error {
 			//create transaction
@@ -197,7 +202,38 @@ func (u *transactionUC) Payment(ctx context.Context, req *entity.TransactionPaym
 }
 
 func (u *transactionUC) Report(ctx context.Context, req *entity.TransactionReportRequest) (*entity.TransactionReportResponse, error) {
-	return nil, nil
+	var (
+		limit = req.Limit
+		page  = req.Page
+	)
+
+	if limit > 100 || limit == 0 {
+		limit = 100
+	}
+
+	if page < 1 {
+		page = 1
+	}
+
+	data, totalData, err := u.transactionRepo.GetTransactionDetails(ctx, req.Search, req.Sort, page, limit)
+	if err != nil {
+		return nil, utils.ErrInternal("Failed get transaction report list : "+err.Error(), "transactionUC.Report.transactionRepo.GetTransactionDetails")
+	}
+
+	var resp []*entity.Transaction
+	for _, d := range data {
+		resp = append(resp, d.ToTransactionEntity())
+	}
+
+	return &entity.TransactionReportResponse{
+		ListPaginationResponse: &entity.ListPaginationResponse{
+			CurrentPage: page,
+			TotalPage:   int64(math.Ceil(float64(totalData) / float64(limit))),
+			TotalData:   totalData,
+			PerPage:     limit,
+		},
+		Data: resp,
+	}, nil
 }
 
 func (u *transactionUC) UpdateTransactionStatus(ctx context.Context, req *entity.UpdateTransactionStatusRequest) (*entity.UpdateTransactionStatusResponse, error) {

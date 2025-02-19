@@ -28,7 +28,7 @@ func (h *TransactionHandler) SetupHandlers(r *gin.Engine) {
 	transactionPathV1.POST("/transaction/topup", h.topup)
 	transactionPathV1.POST("/transaction/transfer", h.transfer)
 	transactionPathV1.POST("/transaction/payment", h.payment)
-	transactionPathV1.GET("/transaction/report", h.report)
+	transactionPathV1.POST("/transaction/report-list", h.report)
 }
 
 func (h *TransactionHandler) topup(c *gin.Context) {
