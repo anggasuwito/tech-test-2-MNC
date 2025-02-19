@@ -12,6 +12,8 @@ import (
 type UserAccountRepo interface {
 	CheckExistPhone(ctx context.Context, phone string) (bool, error)
 	GetUserAccountByPhone(ctx context.Context, phone string) (*model.UserAccount, error)
+	GetAndLockAccountBalance(ctx context.Context, accountID string) (*model.UserAccountBalance, error)
+	UpdateAccountBalance(ctx context.Context, req *model.UserAccountBalance) error
 	GetUserAccountByID(ctx context.Context, id string) (*model.UserAccount, error)
 	CreateUserAccount(ctx context.Context, req *model.UserAccount) error
 	CreateUserAccountBalance(ctx context.Context, req *model.UserAccountBalance) error
@@ -73,6 +75,40 @@ func (r *userAccountRepo) GetUserAccountByID(ctx context.Context, id string) (*m
 	}
 
 	return &data, nil
+}
+
+func (r *userAccountRepo) GetAndLockAccountBalance(ctx context.Context, accountID string) (*model.UserAccountBalance, error) {
+	var data model.UserAccountBalance
+	db := r.useTX(ctx)
+	err := db.
+		Debug().
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Model(&model.UserAccountBalance{}).
+		Where("deleted_at IS NULL").
+		Where("account_id = ?", accountID).
+		First(&data).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, utils.ErrNotFound("User Account Balance Not Found", "userAccountRepo.GetAndLockAccountBalance.ErrRecordNotFound")
+		}
+		return nil, utils.ErrInternal("Failed get user account balance : "+err.Error(), "userAccountRepo.GetAndLockAccountBalance")
+	}
+
+	return &data, nil
+}
+
+func (r *userAccountRepo) UpdateAccountBalance(ctx context.Context, req *model.UserAccountBalance) error {
+	db := r.useTX(ctx)
+	err := db.Debug().Model(req).
+		Clauses(clause.Returning{}).
+		Where("id = ?", req.ID).
+		Updates(req).
+		Error
+	if err != nil {
+		return utils.ErrInternal("Failed update user account balance : "+err.Error(), "userAccountRepo.UpdateAccountBalance")
+	}
+	return nil
 }
 
 func (r *userAccountRepo) CheckExistPhone(ctx context.Context, phone string) (bool, error) {

@@ -2,8 +2,11 @@ package usecase
 
 import (
 	"context"
+	"database/sql"
+	"tech-test-2-MNC/internal/constant"
 	"tech-test-2-MNC/internal/domain/entity"
 	"tech-test-2-MNC/internal/repository"
+	"tech-test-2-MNC/internal/utils"
 )
 
 type TransactionUC interface {
@@ -11,22 +14,23 @@ type TransactionUC interface {
 	Transfer(ctx context.Context, req *entity.TransactionTransferRequest) (*entity.TransactionTransferResponse, error)
 	Payment(ctx context.Context, req *entity.TransactionPaymentRequest) (*entity.TransactionPaymentResponse, error)
 	Report(ctx context.Context, req *entity.TransactionReportRequest) (*entity.TransactionReportResponse, error)
+	UpdateTransactionStatus(ctx context.Context, req *entity.UpdateTransactionStatusRequest) (*entity.UpdateTransactionStatusResponse, error)
 }
 
 type transactionUC struct {
 	txWrapper       repository.TransactionWrapper
-	userAccountRepo repository.UserAccountRepo
+	accRepo         repository.UserAccountRepo
 	transactionRepo repository.TransactionRepo
 }
 
 func NewTransactionUC(
 	txWrapper repository.TransactionWrapper,
-	userAccountRepo repository.UserAccountRepo,
+	accRepo repository.UserAccountRepo,
 	transactionRepo repository.TransactionRepo,
 ) TransactionUC {
 	return &transactionUC{
 		txWrapper:       txWrapper,
-		userAccountRepo: userAccountRepo,
+		accRepo:         accRepo,
 		transactionRepo: transactionRepo,
 	}
 }
@@ -198,5 +202,49 @@ func (u *transactionUC) Payment(ctx context.Context, req *entity.TransactionPaym
 }
 
 func (u *transactionUC) Report(ctx context.Context, req *entity.TransactionReportRequest) (*entity.TransactionReportResponse, error) {
+	return nil, nil
+}
+
+func (u *transactionUC) UpdateTransactionStatus(ctx context.Context, req *entity.UpdateTransactionStatusRequest) (*entity.UpdateTransactionStatusResponse, error) {
+	transaction, err := u.transactionRepo.GetTransactionByID(ctx, req.TransactionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if transaction.Status != constant.TransactionStatusPending {
+		return &entity.UpdateTransactionStatusResponse{}, nil
+	}
+
+	if err = u.txWrapper.ExecuteTransaction(ctx,
+		func(ctxTX context.Context) error {
+			//update transaction status
+			transaction.Status = constant.TransactionStatusSuccess
+			transaction.CompletedAt = sql.NullTime{Time: utils.TimeNow(), Valid: true}
+			err = u.transactionRepo.UpdateTransaction(ctxTX, transaction)
+			if err != nil {
+				return err
+			}
+
+			for _, detail := range transaction.TransactionDetails {
+				//get and lock account balance
+				accountBalance, err := u.accRepo.GetAndLockAccountBalance(ctxTX, detail.AccountID)
+				if err != nil {
+					return err
+				}
+
+				//update account balance
+				accountBalance.Balance = detail.BalanceAfter
+				err = u.accRepo.UpdateAccountBalance(ctxTX, accountBalance)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }

@@ -23,6 +23,18 @@ type Configuration struct {
 	AccessTokenExpireDuration  string
 	RefreshTokenSecret         string
 	RefreshTokenExpireDuration string
+	NSQProducerHost            string
+	NSQConsumerHost            []string
+	NSQNConsumer               int
+	NSQMaxInFlight             int
+	NSQRequeueTime             int
+	NSQMaxAttempts             uint16
+	NSQConsumers               []NSQConsumer
+}
+
+type NSQConsumer struct {
+	Topic   string `json:"topic"`
+	Channel string `json:"channel"`
 }
 
 func SetConfig() {
@@ -60,6 +72,16 @@ func SetConfig() {
 	val.AccessTokenExpireDuration = os.Getenv("ACCESS_TOKEN_EXPIRE_DURATION")
 	val.RefreshTokenSecret = os.Getenv("REFRESH_TOKEN_SECRET")
 	val.RefreshTokenExpireDuration = os.Getenv("REFRESH_TOKEN_EXPIRE_DURATION")
+	val.NSQProducerHost = os.Getenv("NSQ_PRODUCER_HOST")
+	val.NSQConsumerHost = []string{os.Getenv("NSQ_CONSUMER_HOST")}
+	val.NSQNConsumer, _ = strconv.Atoi(os.Getenv("NSQ_N_CONSUMER"))
+	val.NSQMaxInFlight, _ = strconv.Atoi(os.Getenv("NSQ_MAX_IN_FLIGHT"))
+	val.NSQRequeueTime, _ = strconv.Atoi(os.Getenv("NSQ_REQUEUE_TIME"))
+	nsqMaxAttempts, _ := strconv.Atoi(os.Getenv("NSQ_REQUEUE_TIME"))
+	val.NSQMaxAttempts = uint16(nsqMaxAttempts)
+	val.NSQConsumers = []NSQConsumer{
+		{os.Getenv("TOPIC_FINISH_TRANSACTION"), os.Getenv("CHANNEL_UPDATE_TRANSACTION_STATUS")},
+	}
 }
 
 func GetConfig() *Configuration {

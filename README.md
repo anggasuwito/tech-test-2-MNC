@@ -1,6 +1,12 @@
 **SIMPLE GOLANG EWALLET**
 
-## 1.Example .env
+## Required installation
+- Go
+- PostgreSQL
+- redis
+- NSQ
+
+## Example .env
 ```
 APP_VERSION=v1
 DB_HOST=127.0.0.1
@@ -19,13 +25,21 @@ ACCESS_TOKEN_SECRET=MY_SECRET
 ACCESS_TOKEN_EXPIRE_DURATION=48h
 REFRESH_TOKEN_SECRET=MY_SECRET
 REFRESH_TOKEN_EXPIRE_DURATION=120h
+NSQ_PRODUCER_HOST=127.0.0.1:4150
+NSQ_CONSUMER_HOST=127.0.0.1:4161
+NSQ_N_CONSUMER=2
+NSQ_MAX_IN_FLIGHT=20
+NSQ_REQUEUE_TIME=10
+NSQ_MAX_ATTEMPTS=20
+TOPIC_FINISH_TRANSACTION=finish_transaction
+CHANNEL_UPDATE_TRANSACTION_STATUS=update_transaction_status
 ```
 
-## 2.Example database diagram
+## Example database diagram
 
 ![img.png](img.png)
 
-## 3.Example request & response
+## Example request & response
 
 - API Register (Success)
 ![img.png](img.png)

@@ -52,4 +52,11 @@ type (
 		*ListPaginationResponse
 		Data []*Transaction `json:"data"`
 	}
+
+	UpdateTransactionStatusRequest struct {
+		TransactionID string `json:"transaction_id"`
+	}
+
+	UpdateTransactionStatusResponse struct {
+	}
 )

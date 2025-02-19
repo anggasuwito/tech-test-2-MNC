@@ -16,5 +16,9 @@ func main() {
 	//Start HTTP / REST Server
 	go api.StartHttpServer()
 
+	//Start Consumer
+	nsqClient := api.NewConsumer()
+	go nsqClient.RegisterAll().Run()
+
 	wg.Wait()
 }

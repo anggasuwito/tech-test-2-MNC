@@ -38,6 +38,16 @@ func ResponseError(c *gin.Context, err error) {
 	)
 }
 
+func ResponseErrorNSQ(key string, err error) {
+	if err != nil {
+		var e *Error
+		if errors.As(err, &e) {
+			log.Println(fmt.Sprintf("[%s] [%s] - %s", key, e.Trace, e.Message))
+			return
+		}
+	}
+}
+
 func ResponseSuccess(c *gin.Context, message string, data interface{}) {
 	c.JSON(http.StatusOK,
 		Response{
